@@ -8,7 +8,7 @@ app.get('/', (req, res) => {
   res.send(`<html><body><h1>My App — Version ${version}</h1></body></html>`);
 });
 
-// health/readiness endpoints
+// health/readiness  endpoints
 app.get('/healthz', (req, res) => res.status(200).send('ok'));
 app.get('/ready', (req, res) => res.status(200).send('ready'));
 
