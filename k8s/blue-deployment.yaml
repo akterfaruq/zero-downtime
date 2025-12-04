@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-blue
+  labels:
+    app: zero-demo
+    track: blue
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: zero-demo
+      track: blue
+  template:
+    metadata:
+      labels:
+        app: zero-demo
+        track: blue
+    spec:
+      containers:
+      - name: web
+        image: akterfaruq/zero-downtime-demo:v1
+        env:
+        - name: APP_VERSION
+          value: "v1"
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 3000
+          initialDelaySeconds: 2
+          periodSeconds: 2
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        ports:
+        - containerPort: 3000

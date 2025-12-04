@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-rolling
+  labels:
+    app: zero-demo
+    track: rolling
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: zero-demo
+      track: rolling
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0   # ensure zero pods unavailable
+      maxSurge: 1         # allow one extra pod during update
+  template:
+    metadata:
+      labels:
+        app: zero-demo
+        track: rolling
+    spec:
+      containers:
+      - name: web
+        image: akterfaruq/zero-downtime-demo:latest
+        env:
+        - name: APP_VERSION
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.annotations['app-version'] # optional
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 3000
+          initialDelaySeconds: 2
+          periodSeconds: 2
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        ports:
+        - containerPort: 3000

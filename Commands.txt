@@ -1,0 +1,9 @@
+##Part 1 — Build & Push Docker Images
+
+docker build --build-arg APP_VERSION=v1 -t akterfaruq/zero-downtime-demo:v1 .
+docker push akterfaruq/zero-downtime-demo:v1
+
+# Build v2
+
+docker build --build-arg APP_VERSION=v2 -t akterfaruq/zero-downtime-demo:v2 .
+docker push akterfaruq/zero-downtime-demo:v2
