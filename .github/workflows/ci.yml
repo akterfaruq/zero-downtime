@@ -27,6 +27,10 @@ jobs:
     - name: Build and push v${{ github.run_number }} and latest
       run: |
         IMAGE=${{ secrets.DOCKERHUB_USERNAME }}/zero-downtime-demo
-        docker build --build-arg APP_VERSION=latest -t $IMAGE:latest -t $IMAGE:v${{ github.run_number }} .
+        docker build \
+          --build-arg APP_VERSION=latest \
+          -t $IMAGE:latest \
+          -t $IMAGE:v${{ github.run_number }} \
+          -f app/Dockerfile app
         docker push $IMAGE:latest
         docker push $IMAGE:v${{ github.run_number }}
