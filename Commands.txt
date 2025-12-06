@@ -7,3 +7,92 @@ docker push akterfaruq/zero-downtime-demo:v1
 
 docker build --build-arg APP_VERSION=v2 -t akterfaruq/zero-downtime-demo:v2 .
 docker push akterfaruq/zero-downtime-demo:v2
+
+# Apply Blue Deployment
+kubectl apply -f .\k8s\blue-deployment.yaml
+
+# Apply Green Deployment
+kubectl apply -f .\k8s\green-deployment.yaml
+
+# Apply Service pointing to Blue
+kubectl apply -f .\k8s\service-blue-green.yaml
+
+# Test port-forwarding
+kubectl port-forward svc/web 8080:80
+
+##Switch Service to Green (zero downtime)
+
+@"
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+spec:
+  selector:
+    app: zero-demo
+    track: green
+  ports:
+  - port: 80
+    targetPort: 3000
+"@ | kubectl apply -f -
+
+
+##Continuous test loop (PowerShell)
+while ($true) {
+    (Invoke-WebRequest http://localhost:8080/ -UseBasicParsing).Content |
+        Select-String "Version"
+    Start-Sleep -Milliseconds 200
+}
+
+
+
+# Apply Rolling Update Deployment
+kubectl apply -f .\k8s\rolling-deployment.yaml
+
+# Expose Deployment as Service
+kubectl expose deployment web-rolling --name web-rolling-svc --port 80 --target-port 3000
+
+# Port-forward to test
+kubectl port-forward svc/web-rolling-svc 8081:80
+
+#Update Deployment to new image (simulate update)
+kubectl set image deployment/web-rolling web=akterfaruq/zero-downtime-demo:latest
+
+# Check rollout status
+kubectl rollout status deployment/web-rolling
+
+# List pods
+kubectl get pods -l track=rolling -o wide
+
+
+###Part 4 — Canary Deployment (Argo Rollouts)
+# Optional: Create namespace for Argo Rollouts
+kubectl create namespace argo-rollouts
+
+# Install Argo Rollouts
+kubectl apply -n argo-rollouts -f https://github.com/argoproj/argo-rollouts/releases/latest/download/install.yaml
+
+# Apply Canary Rollout
+kubectl apply -f .\k8s\canary-rollout.yaml
+
+# Apply Service
+kubectl apply -f .\k8s\canary-service.yaml
+
+# Test port-forward
+kubectl port-forward svc/web-canary-svc 8082:80
+
+##Trigger rollout / update image
+kubectl argo rollouts set image web-canary web=akterfaruq/zero-downtime-demo:v2
+# Watch rollout
+kubectl argo rollouts get rollout web-canary --watch
+
+# Promote manually if needed
+kubectl argo rollouts promote web-canary
+
+PowerShell loop for Canary test
+while ($true) {
+    (Invoke-WebRequest http://localhost:8082/ -UseBasicParsing).Content |
+        Select-String "Version"
+    Start-Sleep -Milliseconds 200
+}
+
